@@ -1,0 +1,875 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hospital OP Booking Chatbot</title>
+  {% load static %}
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      padding: 20px;
+    }
+
+    .page-content {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      color: #7f8c8d;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    /* Floating chat widget styles */
+    .chat-widget-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .chat-toggle {
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      font-size: 40px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+      padding: 0;
+    }
+
+    .chat-toggle:hover {
+      background: #2980b9;
+      transform: scale(1.05);
+    }
+
+    .chat-toggle img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      pointer-events: none; /* Prevents the image from capturing click events */
+    }
+
+    .chat-window {
+      position: absolute;
+      bottom: 120px;
+      right: 0;
+      width: 500px;
+      height: 650px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: #3498db;
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 30px;
+      height: 30px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #3498db;
+      font-weight: bold;
+    }
+
+    .chat-header h3 {
+      font-weight: 500;
+      font-size: 20px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #chat {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #f9f9f9;
+    }
+
+    .bot {
+      background: #e3f2fd;
+      color: #2c3e50;
+      margin: 10px 0;
+      padding: 15px 20px;
+      border-radius: 20px;
+      max-width: 85%;
+      word-wrap: break-word;
+      border-bottom-left-radius: 4px;
+    }
+
+    .user {
+      background: #3498db;
+      color: white;
+      margin: 10px 0;
+      padding: 15px 20px;
+      border-radius: 20px;
+      max-width: 85%;
+      word-wrap: break-word;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+      text-align: left;
+    }
+
+    #controls {
+      display: flex;
+      padding: 15px;
+      background: white;
+      border-top: 1px solid #eee;
+    }
+
+    #input {
+      flex: 1;
+      padding: 15px 20px;
+      border: 1px solid #ddd;
+      border-radius: 25px;
+      outline: none;
+      font-size: 16px;
+    }
+
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      padding: 15px 22px;
+      margin-left: 10px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    .welcome-message {
+      text-align: center;
+      padding: 25px;
+      color: #7f8c8d;
+    }
+
+    .typing-indicator {
+      display: none;
+      padding: 15px 20px;
+      background: #e3f2fd;
+      border-radius: 20px;
+      margin: 10px 0;
+      width: 90px;
+    }
+
+    .typing-indicator span {
+      height: 10px;
+      width: 10px;
+      background: #7f8c8d;
+      border-radius: 50%;
+      display: inline-block;
+      margin: 0 3px;
+      animation: bounce 1.3s linear infinite;
+    }
+
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-5px); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bot, .user {
+      animation: fadeIn 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-content">
+    <h1>Hospital Management System</h1>
+    <p>Welcome to our hospital management system. Need assistance with appointments or medical inquiries? Our chatbot is available 24/7 to help you. Click the chat icon in the bottom right corner to start a conversation.</p>
+    <p>You can book appointments, check your visit history, or get medical information through our chat assistant.</p>
+  </div>
+
+  <!-- Floating Chat Widget -->
+  <div class="chat-widget-container">
+    <button class="chat-toggle" id="chatToggle">
+      <img src="{% static 'images/chat-icon.png' %}" alt="Hospital Chat">
+    </button>
+    <div class="chat-window" id="chatWindow">
+      <div class="chat-header">
+        <div class="chat-header-logo">
+          <div class="logo-icon">H</div>
+          <h3>Hospital Assistant</h3>
+        </div>
+        <button class="close-btn" id="closeBtn">×</button>
+      </div>
+      <div id="chat"></div>
+      <div class="typing-indicator" id="typingIndicator">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <div id="controls">
+        <input id="input" placeholder="Type here..." />
+        <button id="send">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const send = document.getElementById('send');
+    const chatToggle = document.getElementById('chatToggle');
+    const chatWindow = document.getElementById('chatWindow');
+    const closeBtn = document.getElementById('closeBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    // Toggle chat window
+    chatToggle.addEventListener('click', () => {
+      chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+      if (chatWindow.style.display === 'flex') {
+        input.focus();
+        // Scroll to bottom of chat
+        chat.scrollTop = chat.scrollHeight;
+      }
+    });
+
+    // Close chat window
+    closeBtn.addEventListener('click', () => {
+      chatWindow.style.display = 'none';
+    });
+
+    function addBot(text){
+      const d = document.createElement('div'); d.className='bot'; d.textContent = text; chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+    }
+    
+    function addUser(text){
+      const d = document.createElement('div'); d.className='user'; d.textContent = text; chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+    }
+
+    // Simple state machine for the strict flow
+    const state = {step: 'start', temp: {}};
+
+    function resetTemp(){ state.temp = {}; }
+
+    async function callAction(action, data){
+      // Show typing indicator
+      typingIndicator.style.display = 'block';
+      chat.scrollTop = chat.scrollHeight;
+      
+      try {
+        const response = await fetch('/api/perform_action/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({action, data})
+        });
+        
+        // Hide typing indicator
+        typingIndicator.style.display = 'none';
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        // Hide typing indicator
+        typingIndicator.style.display = 'none';
+        console.error('Error calling action:', error);
+        addBot('Sorry, I encountered an error processing your request. Please try again.');
+        return {error: 'network_error'};
+      }
+    }
+
+    addBot('Hello! 👋 How can I assist you today?');
+
+    // New function to handle problem statement and doctor assignment
+    async function handleProblemStatement(problemText) {
+      state.problem = problemText;
+      addBot('Assigning doctor based on symptoms...');
+      const resp = await callAction('ASSIGN_DOCTOR', {problem: state.problem});
+      if(resp.assigned){
+        state.doctor = resp.doctor;
+        addBot('Assigned to Dr. ' + state.doctor.first_name + ' ' + state.doctor.last_name + ' (' + state.doctor.specialization + ')');
+        
+        // Show available slots if any
+        if(resp.available_slots && resp.available_slots.length > 0) {
+          addBot('Available slots:');
+          resp.available_slots.forEach(slot => {
+            addBot(`${slot.id}. ${slot.date} at ${slot.time}`);
+          });
+          addBot('Please select a slot by entering its number (1-5), or type "auto" for automatic selection:');
+          state.step = 'choose_slot';
+          state.available_slots = resp.available_slots;
+          return;
+        } else {
+          addBot('No specific slots available right now. We will assign the soonest available slot.');
+          await bookAppointment();
+        }
+      } else {
+        addBot('No doctor available; please try again later.'); state.step='start';
+      }
+    }
+
+    async function bookAppointment(slotChoice = null) {
+      addBot('Booking appointment...');
+      
+      // Prepare booking data
+      const bookingData = {
+        patient_id: state.patient.patient_id, 
+        doctor_id: state.doctor.doctor_id, 
+        problem: state.problem
+      };
+      
+      // Add previous encounter ID if this is a follow-up
+      if(state.previous_encounter_id) {
+        bookingData.previous_encounter_id = state.previous_encounter_id;
+      }
+      
+      // Add slot choice if provided
+      if(slotChoice) {
+        bookingData.slot_choice = slotChoice;
+      }
+      
+      const book = await callAction('BOOK_APPOINTMENT', bookingData);
+      if(book.encounter){
+        addBot('Appointment booked!');
+        addBot('OP ID: ' + book.encounter.encounter_id);
+        addBot('Doctor: Dr. ' + state.doctor.first_name + ' ' + state.doctor.last_name + ' (' + state.doctor.specialization + ')');
+        addBot('Date & Time: ' + book.encounter.appointment_date);
+        addBot('Visit Type: ' + (book.encounter.visit_type === 'FU' ? 'Follow-up' : 'New Visit'));
+        
+        // Ask about payment
+        addBot('Would you like to proceed with payment now? (reply: yes / no)');
+        state.step = 'ask_payment';
+        state.current_encounter = book.encounter;
+      } else {
+        addBot('Booking failed.'); state.step='start';
+      }
+    }
+
+    send.onclick = async ()=>{
+      const text = input.value.trim(); if(!text) return; addUser(text); input.value='';
+      
+      // Handle general questions first
+      if(/show.*doctor/i.test(text)) {
+        addBot('Fetching list of available doctors...');
+        try {
+          const response = await fetch('/api/perform_action/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({action: 'LIST_DOCTORS', data: {}})
+          });
+          
+          if(response.ok) {
+            const result = await response.json();
+            if(result.doctors && result.doctors.length > 0) {
+              let doctorList = 'Available Doctors:\n';
+              result.doctors.forEach((doc, index) => {
+                doctorList += `${index + 1}. Dr. ${doc.first_name} ${doc.last_name} - ${doc.specialization}\n`;
+              });
+              addBot(doctorList);
+            } else {
+              addBot('No doctors available at the moment.');
+            }
+          } else {
+            addBot('Unable to fetch doctor list at the moment.');
+          }
+        } catch (error) {
+          console.error('Error fetching doctors:', error);
+          addBot('Sorry, I encountered an error fetching the doctor list.');
+        }
+        return;
+      }
+      
+      if(/past.*data|previous.*visit|visit.*history/i.test(text)) {
+        if(state.patient && state.patient.patient_id) {
+          addBot('Fetching your visit history...');
+          try {
+            const response = await fetch('/api/perform_action/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({action: 'GET_PATIENT_HISTORY', data: {patient_id: state.patient.patient_id}})
+            });
+            
+            if(response.ok) {
+              const result = await response.json();
+              if(result.history && result.history.length > 0) {
+                let historyText = 'Your Visit History:\n';
+                result.history.forEach((visit, index) => {
+                  historyText += `${index + 1}. ${visit.visit_date.split('T')[0]} - ${visit.problem} with ${visit.doctor_name} (${visit.specialization}) - Status: ${visit.status}\n`;
+                });
+                addBot(historyText);
+              } else {
+                addBot('You have no previous visits recorded.');
+              }
+            } else {
+              addBot('Unable to fetch visit history at the moment.');
+            }
+          } catch (error) {
+            console.error('Error fetching history:', error);
+            addBot('Sorry, I encountered an error fetching your visit history.');
+          }
+        } else {
+          addBot('Please register or log in first to access your visit history.');
+        }
+        return;
+      }
+      
+      if(/lab.*report|test.*result/i.test(text)) {
+        if(state.patient && state.patient.patient_id) {
+          addBot('Fetching your recent lab reports...');
+          try {
+            const response = await fetch('/api/perform_action/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({action: 'GET_LAB_REPORTS', data: {patient_id: state.patient.patient_id}})
+            });
+            
+            if(response.ok) {
+              const result = await response.json();
+              if(result.reports && result.reports.length > 0) {
+                let reportText = 'Recent Lab Reports:\n';
+                result.reports.forEach((report, index) => {
+                  reportText += `${index + 1}. ${report.test_name}: ${report.result_value} ${report.result_unit || ''} (Reference: ${report.reference_range || 'N/A'}) - Date: ${report.test_date}\n`;
+                });
+                addBot(reportText);
+              } else {
+                addBot('No recent lab reports found.');
+              }
+            } else {
+              addBot('Unable to fetch lab reports at the moment.');
+            }
+          } catch (error) {
+            console.error('Error fetching lab reports:', error);
+            addBot('Sorry, I encountered an error fetching your lab reports.');
+          }
+        } else {
+          addBot('Please register or log in first to access your lab reports.');
+        }
+        return;
+      }
+
+      // Handle initial greeting and booking intent detection
+      if(state.step === 'start'){
+        // detect booking intent or collect problem statement directly
+        if(/book|appointment|op/i.test(text)){
+          state.step = 'ask_patient_type';
+          addBot('Are you an existing patient or a new patient? (reply: existing / new)');
+          return;
+        }
+        // If user directly states their problem without saying "book"
+        else {
+          state.step = 'ask_patient_type';
+          addBot('Are you an existing patient or a new patient? (reply: existing / new)');
+          // Store the problem statement temporarily
+          state.temp.problem = text;
+          return;
+        }
+      }
+
+      if(state.step === 'ask_patient_type'){
+        if(/existing/i.test(text)){
+          state.step = 'ask_existing_id';
+          addBot('Please provide Patient ID or registered phone number.');
+          return;
+        }
+        if(/new/i.test(text)){
+          state.step = 'collect_new';
+          state.temp.new = {};
+          addBot('Please provide First Name:');
+          return;
+        }
+        addBot('Reply with "existing" or "new".');
+        return;
+      }
+
+      if(state.step === 'ask_existing_id'){
+        // validate
+        const isNumeric = /^\d+$/.test(text);
+        let payload = {};
+        if(isNumeric){ payload.patient_id = parseInt(text); } else { payload.phone = text; }
+        addBot('Validating patient...');
+        const resp = await callAction('VALIDATE_PATIENT', payload);
+        if(resp.valid){
+          state.patient = resp.patient;
+          addBot('Patient validated: ' + resp.patient.first_name + ' ' + resp.patient.last_name);
+          
+          // Show previous encounters if any
+          if(resp.previous_encounters && resp.previous_encounters.length > 0) {
+            addBot('Previous visits:');
+            resp.previous_encounters.forEach(enc => {
+              addBot(`- ${enc.visit_date.split('T')[0]}: ${enc.problem} with ${enc.doctor_name} (${enc.specialization}) - Status: ${enc.status}`);
+            });
+            addBot('Is this related to a previous visit or a new issue? (reply: previous / new)');
+            state.step = 'ask_visit_type';
+            return;
+          }
+          
+          state.step = 'ask_problem';
+          // If we already have the problem statement, use it
+          if(state.temp.problem) {
+            handleProblemStatement(state.temp.problem);
+            return;
+          }
+          addBot('Briefly describe your health problem.');
+        } else {
+          addBot('No patient found. Type "new" to register or try phone/ID again.');
+          state.step = 'ask_patient_type';
+        }
+        return;
+      }
+
+      if(state.step === 'collect_new'){
+        const n = state.temp.new;
+        if(!n.first_name){ n.first_name = text; addBot('Last Name:'); return; }
+        if(!n.last_name){ n.last_name = text; addBot('Date of Birth (YYYY-MM-DD):'); return; }
+        if(!n.dob){ n.dob = text; addBot('Gender (M/F/O):'); return; }
+        if(!n.gender){ n.gender = text; addBot('Phone Number:'); return; }
+        if(!n.phone){ n.phone = text; addBot('Email (optional):'); return; }
+        if(!n.email){ n.email = text || ''; addBot('Address:'); return; }
+        if(!n.address){ n.address = text; addBot('Blood Group (e.g., O+):'); return; }
+        if(!n.blood_group){ n.blood_group = text;
+          // register now
+          addBot('Registering patient...');
+          const resp = await callAction('REGISTER_PATIENT', n);
+          if(resp.patient_id){
+            state.patient = {patient_id: resp.patient_id, first_name: n.first_name, last_name: n.last_name, phone: n.phone};
+            addBot('Registered successfully. Patient ID: ' + resp.patient_id);
+            state.step = 'ask_problem';
+            // Clear any previously stored problem since we're collecting fresh symptoms
+            state.temp.problem = null;
+            addBot('Briefly describe your health problem.');
+          } else {
+            // Show specific error message if available
+            if(resp.error) {
+              addBot('Registration failed: ' + resp.error);
+            } else {
+              addBot('Registration failed. Please try again.');
+            }
+            state.step='start';
+          }
+        }
+        return;
+      }
+
+      if(state.step === 'choose_slot'){
+        if(/auto/i.test(text)) {
+          await bookAppointment();
+          return;
+        }
+        
+        const slotNumber = parseInt(text);
+        if(slotNumber && slotNumber >= 1 && slotNumber <= 5) {
+          const selectedSlot = state.available_slots.find(slot => slot.id === slotNumber);
+          if(selectedSlot) {
+            await bookAppointment(selectedSlot.datetime);
+            return;
+          }
+        }
+        
+        addBot('Please select a valid slot number (1-5) or type "auto" for automatic selection.');
+        return;
+      }
+
+      if(state.step === 'ask_payment'){
+        if(/yes/i.test(text)) {
+          addBot('Processing payment... (This is a placeholder - in a real system, you would integrate with a payment gateway)');
+          // Update payment status
+          await callAction('UPDATE_PAYMENT_STATUS', {
+            encounter_id: state.current_encounter.encounter_id,
+            payment_status: 'PAID'
+          });
+          addBot('Payment successful!');
+        } else {
+          addBot('Appointment booked without payment. You can pay at the hospital.');
+        }
+        
+        // Send confirmation email and schedule reminder
+        const emailResponse = await callAction('SEND_EMAIL', {encounter_id: state.current_encounter.encounter_id});
+        await callAction('SCHEDULE_REMINDER', {encounter_id: state.current_encounter.encounter_id, remind_at: new Date(new Date(state.current_encounter.appointment_date).getTime() - 24*3600*1000).toISOString()});
+        
+        if(emailResponse.sent) {
+          addBot('Confirmation email sent to ' + emailResponse.patient_email + '. Please check your inbox.');
+        } else {
+          let emailMessage = 'Failed to send confirmation email to ' + emailResponse.patient_email + '.';
+          if(emailResponse.error) {
+            emailMessage += ' Error: ' + emailResponse.error;
+          }
+          emailMessage += ' Please check your spam folder.';
+          addBot(emailMessage);
+        }
+        
+        addBot('Reminder scheduled 24 hours before your appointment.');
+        addBot('After visit, you will be asked for feedback.');
+        state.step = 'done';
+        return;
+      }
+
+      if(state.step === 'ask_problem'){
+        // Pass the problem statement to our new handler function
+        await handleProblemStatement(text);
+        return;
+      }
+
+      if(state.step === 'ask_visit_type'){
+        if(/previous/i.test(text)){
+          addBot('Please provide the OP ID of the previous visit you want to follow up on:');
+          state.step = 'ask_previous_op_id';
+          return;
+        }
+        if(/new/i.test(text)){
+          state.step = 'ask_problem';
+          // Clear any previously stored problem and ask for fresh symptoms
+          state.temp.problem = null;
+          addBot('Briefly describe your health problem.');
+          return;
+        }
+        addBot('Reply with "previous" or "new".');
+        return;
+      }
+
+      if(state.step === 'ask_previous_op_id'){
+        const encounterId = parseInt(text);
+        // Validate encounter belongs to this patient
+        addBot('Checking encounter details...');
+        // For simplicity, we'll assume valid for now
+        // In a real implementation, we would validate this properly
+        state.previous_encounter_id = encounterId;
+        state.step = 'ask_problem';
+        // If we already have the problem statement, use it
+        if(state.temp.problem) {
+          handleProblemStatement(state.temp.problem);
+          return;
+        }
+        addBot('Briefly describe your health problem related to this previous visit.');
+        return;
+      }
+
+      if(state.step === 'done'){
+        // After appointment is booked, ask for feedback after some time
+        // In a real implementation, this would be triggered after the visit
+        setTimeout(() => {
+          if(state.current_encounter) {
+            addBot('How was your visit? Please rate your experience (1-5 stars):');
+            state.step = 'collect_feedback_rating';
+          }
+        }, 5000); // Wait 5 seconds for demo purposes
+        
+        addBot('If you need anything else, type "book" to create another appointment.');
+        state.step='start';
+        return;
+      }
+      
+      if(state.step === 'collect_feedback_rating'){
+        const rating = parseInt(text);
+        if(rating >= 1 && rating <= 5) {
+          state.feedback_rating = rating;
+          addBot('Any additional comments about your visit?');
+          state.step = 'collect_feedback_comments';
+        } else {
+          addBot('Please enter a rating between 1 and 5.');
+        }
+        return;
+      }
+      
+      if(state.step === 'collect_feedback_comments'){
+        state.feedback_comments = text;
+        addBot('Do you need a follow-up appointment? (yes/no)');
+        state.step = 'collect_feedback_followup';
+        return;
+      }
+      
+      if(state.step === 'collect_feedback_followup'){
+        const followUpRequired = /yes/i.test(text);
+        
+        // If follow-up is required, schedule it
+        if(followUpRequired) {
+          addBot('Scheduling follow-up appointment...');
+          
+          const followUpResponse = await callAction('SCHEDULE_FOLLOW_UP', {
+            encounter_id: state.current_encounter.encounter_id,
+            follow_up_days: 7, // Default to 7 days
+            reason: 'Follow-up consultation based on previous visit'
+          });
+          
+          if(followUpResponse.follow_up_encounter_id) {
+            addBot(`Follow-up appointment scheduled!`);
+            addBot(`Appointment ID: ${followUpResponse.follow_up_encounter_id}`);
+            addBot(`Date & Time: ${followUpResponse.appointment_date}`);
+            addBot('You will receive a confirmation email with details.');
+          } else {
+            addBot('Failed to schedule follow-up appointment. Please contact the hospital directly.');
+          }
+        }
+        
+        addBot('Submitting your feedback...');
+        
+        // Submit feedback
+        const feedbackData = {
+          encounter_id: state.current_encounter.encounter_id,
+          rating: state.feedback_rating,
+          comments: state.feedback_comments,
+          follow_up_required: followUpRequired
+        };
+        
+        const feedbackResponse = await callAction('POST_VISIT_FEEDBACK', feedbackData);
+        if(feedbackResponse.feedback_id) {
+          addBot('Thank you for your feedback!');
+          
+          // Get and share visit summary
+          const summaryResponse = await callAction('GET_VISIT_SUMMARY', {
+            encounter_id: state.current_encounter.encounter_id
+          });
+          
+          if(summaryResponse.summary) {
+            const summary = summaryResponse.summary;
+            addBot('Here is a summary of your visit:');
+            addBot(`Appointment ID: ${summary.encounter_id}`);
+            addBot(`Doctor: Dr. ${summary.doctor.first_name} ${summary.doctor.last_name} (${summary.doctor.specialization})`);
+            addBot(`Date & Time: ${summary.visit_details.visit_date}`);
+            addBot(`Concern: ${summary.visit_details.problem}`);
+            
+            if(summary.medications && summary.medications.length > 0) {
+              addBot('Prescribed Medications:');
+              summary.medications.forEach(med => {
+                addBot(`- ${med.name} (${med.dosage}), ${med.frequency}`);
+              });
+            }
+            
+            if(summary.diagnoses && summary.diagnoses.length > 0) {
+              addBot('Diagnoses:');
+              summary.diagnoses.forEach(diag => {
+                addBot(`- ${diag.description} (${diag.code})`);
+              });
+            }
+            
+            addBot('A detailed summary has been sent to your email.');
+          }
+        } else {
+          addBot('Failed to submit feedback. Please try again.');
+        }
+        
+        state.step = 'start';
+        return;
+      }
+      
+      // Check for follow-ups when user starts a new conversation
+      if(state.step === 'start') {
+        // Check if user has any upcoming follow-ups
+        if(state.patient && state.patient.patient_id) {
+          const followUpStatus = await callAction('CHECK_FOLLOW_UP_STATUS', {
+            patient_id: state.patient.patient_id
+          });
+          
+          if(followUpStatus.follow_ups && followUpStatus.follow_ups.length > 0) {
+            addBot('You have upcoming follow-up appointments:');
+            followUpStatus.follow_ups.forEach(fu => {
+              addBot(`- ${fu.visit_date.split('T')[0]}: ${fu.reason} with ${fu.doctor_name} (${fu.specialization})`);
+            });
+            addBot('Please confirm your attendance for these appointments.');
+          }
+        }
+        
+        // Continue with normal flow
+        if(/book|appointment|op/i.test(text)){
+          state.step = 'ask_patient_type';
+          addBot('Are you an existing patient or a new patient? (reply: existing / new)');
+          return;
+        }
+        // If user directly states their problem without saying "book"
+        else {
+          state.step = 'ask_patient_type';
+          addBot('Are you an existing patient or a new patient? (reply: existing / new)');
+          // Store the problem statement temporarily
+          state.temp.problem = text;
+          return;
+        }
+      }
+
+      // fallback
+      addBot('Sorry, I did not understand. Type "book" to start OP booking.');
+    };
+
+    input.addEventListener('keydown', function(e){ if(e.key==='Enter') send.click(); });
+    
+    // Close chat when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!chatWindow.contains(e.target) && e.target !== chatToggle && chatWindow.style.display === 'flex') {
+        chatWindow.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Chatbot - Floating Widget</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .content {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        /* Floating chat widget styles */
+        .chat-widget-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .chat-toggle {
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .chat-toggle:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .chat-window {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            width: 1000px;
+            height: 1000px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #3498db;
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            font-weight: 500;
+            font-size: 18px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot-message {
+            background: #e3f2fd;
+            border-bottom-left-radius: 4px;
+            align-self: flex-start;
+        }
+
+        .user-message {
+            background: #3498db;
+            color: white;
+            border-bottom-right-radius: 4px;
+            margin-left: auto;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input button {
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 16px;
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .chat-input button:hover {
+            background: #2980b9;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 14px;
+            background: #e3f2fd;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            width: 80px;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: #7f8c8d;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: bounce 1.3s linear infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Hospital Management System</h1>
+        <p>Welcome to our hospital management system. Need assistance with appointments or medical inquiries? Our chatbot is available 24/7 to help you. Click the chat icon in the bottom right corner to start a conversation.</p>
+    </div>
+
+    <!-- Floating Chat Widget -->
+    <div class="chat-widget-container">
+        <button class="chat-toggle" id="chatToggle">💬</button>
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <h3>Health Assistant ⚕️️</h3>
+                <button class="close-btn" id="closeBtn">×</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message">
+                    <p>Hello! 👋 How can I assist you today?</p>
+                    <p>You can book appointments, check your visit history, or get medical information.</p>
+                </div>
+                <div class="message bot-message">
+                    How can I assist you today?
+                </div>
+            </div>
+            <div class="typing-indicator" id="typingIndicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Type your message...">
+                <button id="sendButton">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatToggle = document.getElementById('chatToggle');
+        const chatWindow = document.getElementById('chatWindow');
+        const closeBtn = document.getElementById('closeBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // Toggle chat window
+        chatToggle.addEventListener('click', () => {
+            chatWindow.style.display = chatWindow.style.display === 'flex' ? 'none' : 'flex';
+            if (chatWindow.style.display === 'flex') {
+                messageInput.focus();
+            }
+        });
+
+        // Close chat window
+        closeBtn.addEventListener('click', () => {
+            chatWindow.style.display = 'none';
+        });
+
+        // Add message to chat
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show typing indicator
+        function showTyping() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Hide typing indicator
+        function hideTyping() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // Simulate bot response
+        function simulateBotResponse(userMessage) {
+            showTyping();
+            
+            // Simulate delay
+            setTimeout(() => {
+                hideTyping();
+                
+                // Simple responses based on user input
+                let response = "I'm here to help! You can book appointments, check your visit history, or get medical information.";
+                
+                if (userMessage.toLowerCase().includes('hello') || userMessage.toLowerCase().includes('hi')) {
+                    response = "Hello! How can I assist you today?";
+                } else if (userMessage.toLowerCase().includes('book') || userMessage.toLowerCase().includes('appointment')) {
+                    response = "I can help you book an appointment. Are you an existing patient or a new patient?";
+                } else if (userMessage.toLowerCase().includes('thank')) {
+                    response = "You're welcome! Is there anything else I can help you with?";
+                } else if (userMessage.toLowerCase().includes('help')) {
+                    response = "I can help you with:\n- Booking appointments\n- Checking visit history\n- Medical information\n- Prescription refills\n\nWhat would you like to do?";
+                }
+                
+                addMessage(response, false);
+            }, 1000);
+        }
+
+        // Send message function
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                addMessage(message, true);
+                messageInput.value = '';
+                simulateBotResponse(message);
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Close chat when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!chatWindow.contains(e.target) && e.target !== chatToggle && chatWindow.style.display === 'flex') {
+                chatWindow.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
